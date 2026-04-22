@@ -474,6 +474,7 @@ body { font-family: 'Noto Sans KR', sans-serif; background: var(--bg); color: va
         <div style="display:flex;gap:6px;align-items:center">
           <button class="today-btn" onclick="goToday()">오늘</button>
           <button class="nav-btn" onclick="shiftWeek(1)">›</button>
+          <button class="nav-btn" id="resvRefreshBtn" onclick="refreshResv()" title="새로고침" style="font-size:16px">🔄</button>
         </div>
       </div>
       <div class="week-strip" id="weekStrip"></div>
@@ -1078,6 +1079,15 @@ function renderResv() {
   loadResvFromSheets().then(()=>{ buildWeek(); renderResvSlots(); });
 }
 
+async function refreshResv() {
+  const btn = document.getElementById('resvRefreshBtn');
+  btn.textContent = '⏳';
+  await loadResvFromSheets();
+  buildWeek(); renderResvSlots();
+  btn.textContent = '🔄';
+  toast('✅ 새로고침 완료!', 'success');
+}
+
 function renderResvSlots() {
   const dateStr = fmtDate(resvDate);
   const list = document.getElementById('resvList');
@@ -1089,13 +1099,12 @@ function renderResvSlots() {
     const grid = TIME_SLOTS.map(slot => {
       const rec = recs.find(r=>r.slot===slot);
       if (rec) {
-        const isMineSuffix = `data-id="${rec.id}" data-vehicle="${v.name}"`;
-        return `<div class="resv-slot ${rec.isMine?'mine':'booked'}">
+        return `<div class="resv-slot booked">
           <div class="slot-time">${slot}</div>
-          <div class="slot-status ${rec.isMine?'mine-text':'taken'}">${rec.isMine?'내 예약':'예약됨'}</div>
+          <div class="slot-status taken">예약됨</div>
           <div class="slot-who">👤 ${rec.name}</div>
           <span class="slot-team-badge team-${rec.team}">${rec.team}</span>
-          ${rec.isMine?`<button class="cancel-x" onclick="openCancelModal('${rec.id}','${v.name}','${slot}','${rec.name}')">✕</button>`:''}
+          <button class="cancel-x" onclick="openCancelModal('${rec.id}','${v.name}','${slot}','${rec.name}')">✕</button>
         </div>`;
       } else {
         return `<div class="resv-slot available" onclick="openResvSheet('${v.name}','${slot}','${dateStr}')">
