@@ -296,6 +296,52 @@ body { font-family: 'Noto Sans KR', sans-serif; background: var(--bg); color: va
 .wsub { font-size: 12px; color: var(--sub); line-height: 1.6; }
 .wbtn { display: inline-block; margin-top: 8px; padding: 8px 16px; background: var(--accent); color: #fff; border: none; border-radius: 10px; font-size: 13px; font-weight: 700; font-family: 'Noto Sans KR', sans-serif; cursor: pointer; }
 .wbtn:active { opacity: 0.8; }
+
+/* ── 예약 페이지 ── */
+.resv-header {
+  padding: 14px 16px 10px;
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; z-index: 10;
+}
+.resv-date-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.resv-date-label { font-size: 16px; font-weight: 800; color: var(--text); }
+.nav-btn { width: 36px; height: 36px; border-radius: 50%; background: var(--bg); border: 1px solid var(--border); font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.nav-btn:active { background: var(--border); }
+.today-btn { padding: 5px 14px; border-radius: 20px; background: var(--accent); border: none; color: #fff; font-size: 12px; font-weight: 700; font-family: 'Noto Sans KR', sans-serif; cursor: pointer; }
+.week-strip { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+.week-strip::-webkit-scrollbar { display: none; }
+.day-chip { flex-shrink: 0; width: 44px; display: flex; flex-direction: column; align-items: center; padding: 7px 0; border-radius: 12px; background: transparent; border: 1.5px solid transparent; cursor: pointer; transition: all 0.15s; font-family: 'Noto Sans KR', sans-serif; }
+.day-chip:active { opacity: 0.7; }
+.day-chip.active { background: var(--accent); border-color: var(--accent); }
+.day-chip.today:not(.active) { border-color: var(--accent); }
+.day-dow { font-size: 10px; font-weight: 700; color: var(--muted); margin-bottom: 3px; }
+.day-chip.active .day-dow { color: rgba(255,255,255,0.8); }
+.day-date { font-size: 15px; font-weight: 800; color: var(--text); }
+.day-chip.active .day-date { color: #fff; }
+.day-chip.sunday .day-dow, .day-chip.sunday .day-date { color: #ef4444; }
+.day-chip.active.sunday .day-dow, .day-chip.active.sunday .day-date { color: #fff; }
+.day-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--gold); margin-top: 3px; opacity: 0; }
+.day-dot.show { opacity: 1; }
+.day-chip.active .day-dot { background: rgba(255,255,255,0.8); }
+.resv-list { padding: 12px 14px 100px; }
+.resv-vehicle-section { margin-bottom: 14px; }
+.resv-vehicle-title { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 800; color: var(--navy); padding: 8px 12px; background: linear-gradient(90deg, #eff6ff, #f8fafc); border-radius: 10px; margin-bottom: 6px; border-left: 3px solid var(--accent); }
+.resv-slot-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.resv-slot { padding: 10px 12px; border-radius: 10px; border: 1.5px solid var(--border); background: #fff; cursor: pointer; transition: all 0.15s; position: relative; }
+.resv-slot:active { transform: scale(0.97); }
+.resv-slot.booked { border-color: #fca5a5; background: #fff5f5; cursor: default; }
+.resv-slot.booked:active { transform: none; }
+.resv-slot.mine { border-color: #6ee7b7; background: #f0fdf4; }
+.slot-time { font-size: 11px; font-weight: 700; color: var(--muted); margin-bottom: 3px; }
+.slot-status { font-size: 13px; font-weight: 700; }
+.slot-status.free { color: var(--accent); }
+.slot-status.taken { color: var(--danger); }
+.slot-status.mine-text { color: var(--success); }
+.slot-who { font-size: 11px; color: var(--sub); margin-top: 2px; }
+.slot-team-badge { display: inline-block; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 8px; margin-top: 2px; }
+.cancel-x { position: absolute; top: 6px; right: 8px; font-size: 14px; color: var(--muted); background: none; border: none; cursor: pointer; padding: 2px; line-height: 1; }
+.cancel-x:active { color: var(--danger); }
 </style>
 </head>
 <body>
@@ -418,6 +464,24 @@ body { font-family: 'Noto Sans KR', sans-serif; background: var(--bg); color: va
     </div>
   </div>
 
+  <!-- RESERVATION PAGE -->
+  <div class="page" id="page-resv">
+    <!-- 날짜 네비게이션 -->
+    <div class="resv-header">
+      <div class="resv-date-nav">
+        <button class="nav-btn" onclick="shiftWeek(-1)">‹</button>
+        <span class="resv-date-label" id="resvMonthLabel"></span>
+        <div style="display:flex;gap:6px;align-items:center">
+          <button class="today-btn" onclick="goToday()">오늘</button>
+          <button class="nav-btn" onclick="shiftWeek(1)">›</button>
+        </div>
+      </div>
+      <div class="week-strip" id="weekStrip"></div>
+    </div>
+    <!-- 예약 목록 -->
+    <div class="resv-list" id="resvList"></div>
+  </div>
+
   <!-- SETTINGS PAGE -->
   <div class="page" id="page-settings">
     <div class="settings-list">
@@ -496,6 +560,9 @@ body { font-family: 'Noto Sans KR', sans-serif; background: var(--bg); color: va
   <button class="tab-item active" id="tab-home" onclick="switchTab('home')">
     <div class="tab-icon">📋</div><div class="tab-label">운행기록</div><div class="tab-dot"></div>
   </button>
+  <button class="tab-item" id="tab-resv" onclick="switchTab('resv')">
+    <div class="tab-icon">📅</div><div class="tab-label">차량예약</div><div class="tab-dot"></div>
+  </button>
   <button class="tab-item" id="tab-settings" onclick="switchTab('settings')">
     <div class="tab-icon">⚙️</div><div class="tab-label">설정</div><div class="tab-dot"></div>
   </button>
@@ -560,6 +627,41 @@ body { font-family: 'Noto Sans KR', sans-serif; background: var(--bg); color: va
     <div class="modal-acts">
       <button class="mbtn cancel" onclick="closeInitModal()">취소</button>
       <button class="mbtn confirm" onclick="saveInitKm()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- RESERVATION SHEET -->
+<div class="sheet-overlay" id="resvSheet" onclick="if(event.target===this)closeResvSheet()">
+  <div class="bottom-sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-hdr">
+      <div class="sheet-title">📅 차량 예약</div>
+      <button class="sheet-close" onclick="closeResvSheet()">✕</button>
+    </div>
+    <div class="sheet-body">
+      <div style="background:var(--bg);border-radius:12px;padding:12px 14px;margin-bottom:16px;font-size:14px;font-weight:700;color:var(--navy)" id="resvSheetInfo"></div>
+      <div class="fg"><div class="fl">예약자 이름 <span class="fr">*</span></div><input type="text" class="fi" id="rName" placeholder="예: 오동주" autocomplete="off"></div>
+      <div class="fg"><div class="fl">부서 <span class="fr">*</span></div>
+        <select class="fs" id="rTeam">
+          <option value="">— 부서 선택 —</option>
+          <option>기획운영</option><option>마을동행</option><option>마을돌봄</option><option>마을성장</option><option>마을공동체</option>
+        </select>
+      </div>
+      <button class="submit-btn" onclick="submitReservation()">예약 확정하기</button>
+    </div>
+  </div>
+</div>
+
+<!-- CANCEL CONFIRM MODAL -->
+<div class="modal-ov" id="cancelModal" onclick="if(event.target===this)closeCancelModal()">
+  <div class="modal-box">
+    <div class="modal-tit">🗑 예약 취소</div>
+    <div class="modal-sub" id="cancelModalDesc">이 예약을 취소할까요?</div>
+    <div class="fg"><div class="fl">본인 이름 입력</div><input type="text" class="fi" id="cancelName" placeholder="예약자 이름 입력"></div>
+    <div class="modal-acts">
+      <button class="mbtn cancel" onclick="closeCancelModal()">닫기</button>
+      <button class="mbtn confirm" style="background:var(--danger)" onclick="confirmCancel()">취소 확정</button>
     </div>
   </div>
 </div>
@@ -890,12 +992,181 @@ function copyCode() { navigator.clipboard.writeText(SCRIPT_CODE).then(()=>toast(
 
 // ── TABS ──
 function switchTab(tab) {
-  ['home','settings'].forEach(t=>{
+  ['home','resv','settings'].forEach(t=>{
     document.getElementById('page-'+t).classList.toggle('active',t===tab);
     document.getElementById('tab-'+t).classList.toggle('active',t===tab);
   });
   document.getElementById('fab').style.display = tab==='home'?'flex':'none';
   if (tab==='home') renderHome();
+  if (tab==='resv') renderResv();
+}
+
+// ── 예약 시스템 ──
+const TIME_SLOTS = ['08:00~10:00','10:00~12:00','12:00~14:00','14:00~16:00','16:00~18:00','18:00~20:00'];
+const DOW = ['일','월','화','수','목','금','토'];
+let resvDate = new Date(); // 현재 선택 날짜
+let resvWeekBase = new Date(); // 주 기준
+let pendingResv = null; // 예약 진행 중 데이터
+let pendingCancel = null;
+
+function fmtDate(d) {
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+
+function buildWeek() {
+  const strip = document.getElementById('weekStrip');
+  strip.innerHTML = '';
+  const base = new Date(resvWeekBase);
+  // 월요일 기준 주
+  const day = base.getDay();
+  const monday = new Date(base); monday.setDate(base.getDate() - (day===0?6:day-1));
+  for (let i=0; i<7; i++) {
+    const d = new Date(monday); d.setDate(monday.getDate()+i);
+    const isToday = fmtDate(d)===fmtDate(new Date());
+    const isActive = fmtDate(d)===fmtDate(resvDate);
+    const isSun = d.getDay()===0;
+    // 이 날 예약이 있는지 체크
+    const dateStr = fmtDate(d);
+    const hasResv = Object.values(resvCache).some(v => v.some(r=>r.date===dateStr));
+    const chip = document.createElement('button');
+    chip.className = 'day-chip'+(isToday?' today':'')+(isActive?' active':'')+(isSun?' sunday':'');
+    chip.innerHTML = `<div class="day-dow">${DOW[d.getDay()]}</div><div class="day-date">${d.getDate()}</div><div class="day-dot${hasResv?' show':''}"></div>`;
+    chip.onclick = () => { resvDate = d; resvWeekBase = d; buildWeek(); renderResvSlots(); };
+    strip.appendChild(chip);
+  }
+  // 월 라벨
+  document.getElementById('resvMonthLabel').textContent = resvDate.getFullYear()+'년 '+(resvDate.getMonth()+1)+'월';
+}
+
+function shiftWeek(dir) {
+  resvWeekBase = new Date(resvWeekBase);
+  resvWeekBase.setDate(resvWeekBase.getDate() + dir*7);
+  resvDate = new Date(resvWeekBase);
+  buildWeek(); renderResvSlots();
+}
+function goToday() {
+  resvDate = new Date(); resvWeekBase = new Date();
+  buildWeek(); renderResvSlots();
+}
+
+// resvCache: { vehicleName: [{date, slot, name, team, id}] }
+let resvCache = {};
+
+async function loadResvFromSheets() {
+  try {
+    const res = await fetch(SHEETS_URL + '?action=getResv', {method:'GET', mode:'cors'});
+    const json = await res.json();
+    if (json.result==='ok' && json.data) resvCache = json.data;
+  } catch(e) {
+    // 로컬 폴백
+    try { resvCache = JSON.parse(localStorage.getItem('resvCache')||'{}'); } catch { resvCache = {}; }
+  }
+}
+
+function renderResv() {
+  loadResvFromSheets().then(()=>{ buildWeek(); renderResvSlots(); });
+}
+
+function renderResvSlots() {
+  const dateStr = fmtDate(resvDate);
+  const list = document.getElementById('resvList');
+  list.innerHTML = '';
+  VEHICLES.forEach(v => {
+    const sec = document.createElement('div');
+    sec.className = 'resv-vehicle-section';
+    const recs = (resvCache[v.name]||[]).filter(r=>r.date===dateStr);
+    const grid = TIME_SLOTS.map(slot => {
+      const rec = recs.find(r=>r.slot===slot);
+      if (rec) {
+        const isMineSuffix = `data-id="${rec.id}" data-vehicle="${v.name}"`;
+        return `<div class="resv-slot ${rec.isMine?'mine':'booked'}">
+          <div class="slot-time">${slot}</div>
+          <div class="slot-status ${rec.isMine?'mine-text':'taken'}">${rec.isMine?'내 예약':'예약됨'}</div>
+          <div class="slot-who">👤 ${rec.name}</div>
+          <span class="slot-team-badge team-${rec.team}">${rec.team}</span>
+          ${rec.isMine?`<button class="cancel-x" onclick="openCancelModal('${rec.id}','${v.name}','${slot}','${rec.name}')">✕</button>`:''}
+        </div>`;
+      } else {
+        return `<div class="resv-slot available" onclick="openResvSheet('${v.name}','${slot}','${dateStr}')">
+          <div class="slot-time">${slot}</div>
+          <div class="slot-status free">예약 가능</div>
+        </div>`;
+      }
+    }).join('');
+    sec.innerHTML = `<div class="resv-vehicle-title">${v.emoji} ${v.name}</div><div class="resv-slot-grid">${grid}</div>`;
+    list.appendChild(sec);
+  });
+}
+
+// 예약 바텀시트
+function openResvSheet(vehicle, slot, date) {
+  pendingResv = {vehicle, slot, date};
+  document.getElementById('resvSheetInfo').innerHTML = `🚗 <strong>${vehicle}</strong> &nbsp;|&nbsp; 📅 ${date} &nbsp;|&nbsp; ⏰ ${slot}`;
+  document.getElementById('rName').value = localStorage.getItem('lastResvName')||'';
+  document.getElementById('rTeam').value = localStorage.getItem('lastResvTeam')||'';
+  document.getElementById('resvSheet').classList.add('open');
+}
+function closeResvSheet() { document.getElementById('resvSheet').classList.remove('open'); }
+
+async function submitReservation() {
+  const name = document.getElementById('rName').value.trim();
+  const team = document.getElementById('rTeam').value;
+  if (!name) return toast('예약자 이름을 입력해주세요','error');
+  if (!team) return toast('부서를 선택해주세요','error');
+
+  const {vehicle, slot, date} = pendingResv;
+  // 중복 확인
+  const existing = (resvCache[vehicle]||[]).find(r=>r.date===date&&r.slot===slot);
+  if (existing) return toast('이미 예약된 시간대입니다','error');
+
+  const id = Date.now().toString();
+  const rec = {id, vehicle, date, slot, name, team, isMine:true};
+
+  if (!resvCache[vehicle]) resvCache[vehicle]=[];
+  resvCache[vehicle].push(rec);
+  localStorage.setItem('resvCache', JSON.stringify(resvCache));
+  localStorage.setItem('lastResvName', name);
+  localStorage.setItem('lastResvTeam', team);
+
+  closeResvSheet();
+  buildWeek(); renderResvSlots();
+  toast(`✅ ${vehicle} ${slot} 예약 완료!`, 'success');
+
+  // Sheets에 저장
+  try {
+    await fetch(SHEETS_URL, {
+      method:'POST', mode:'no-cors',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({action:'addResv', id, vehicle, date, slot, name, team})
+    });
+  } catch(e) {}
+}
+
+// 취소
+function openCancelModal(id, vehicle, slot, name) {
+  pendingCancel = {id, vehicle, slot, name};
+  document.getElementById('cancelModalDesc').textContent = `${vehicle} | ${slot} | 예약자: ${name}`;
+  document.getElementById('cancelName').value = '';
+  document.getElementById('cancelModal').classList.add('open');
+}
+function closeCancelModal() { document.getElementById('cancelModal').classList.remove('open'); }
+
+async function confirmCancel() {
+  const inputName = document.getElementById('cancelName').value.trim();
+  if (inputName !== pendingCancel.name) return toast('이름이 일치하지 않습니다','error');
+  const {id, vehicle} = pendingCancel;
+  if (resvCache[vehicle]) resvCache[vehicle] = resvCache[vehicle].filter(r=>r.id!==id);
+  localStorage.setItem('resvCache', JSON.stringify(resvCache));
+  closeCancelModal();
+  buildWeek(); renderResvSlots();
+  toast('예약이 취소되었습니다','info');
+  try {
+    await fetch(SHEETS_URL, {
+      method:'POST', mode:'no-cors',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({action:'cancelResv', id, vehicle})
+    });
+  } catch(e) {}
 }
 
 // ── TOAST ──
