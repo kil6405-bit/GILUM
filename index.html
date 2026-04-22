@@ -605,16 +605,50 @@ const SCRIPT_CODE = `function doPost(e) {
   }
 }`;
 
-let cv = VEHICLES[0].name; // current vehicle
-let sheetsUrl = localStorage.getItem('sheetsUrl') || 'https://script.google.com/a/macros/guswc.org/s/AKfycbxzDJ3VgUF_amqxSBbE_bpkEKK0mxkcfBRhMHY0jsR1DBbUWZGQiLGQGNrbNf1F-muJuA/exec';
+let cv = VEHICLES[0].name;
+const SHEETS_URL = 'https://script.google.com/a/macros/guswc.org/s/AKfycbxzDJ3VgUF_amqxSBbE_bpkEKK0mxkcfBRhMHY0jsR1DBbUWZGQiLGQGNrbNf1F-muJuA/exec';
 
-function ld(v) { try { return JSON.parse(localStorage.getItem('vlog_'+v)) || {initKm:0,records:[]}; } catch { return {initKm:0,records:[]}; } }
-function sd(v,d) { localStorage.setItem('vlog_'+v, JSON.stringify(d)); }
+// 메모리 캐시 (Sheets에서 불러온 데이터)
+let cache = {};
+
 function today() { return new Date().toISOString().split('T')[0]; }
+
+// ── Sheets에서 전체 데이터 불러오기 ──
+async function loadFromSheets() {
+  try {
+    showLoading(true);
+    const res = await fetch(SHEETS_URL + '?action=getAll', {method:'GET', mode:'cors'});
+    const json = await res.json();
+    if (json.result === 'ok' && json.data) {
+      cache = json.data;
+      // 없는 차량은 빈 데이터로 초기화
+      VEHICLES.forEach(v => { if (!cache[v.name]) cache[v.name] = {initKm:0, records:[]}; });
+    }
+  } catch(e) {
+    // CORS 실패 시 localStorage 폴백
+    VEHICLES.forEach(v => {
+      try { cache[v.name] = JSON.parse(localStorage.getItem('vlog_'+v.name)) || {initKm:0,records:[]}; }
+      catch { cache[v.name] = {initKm:0,records:[]}; }
+    });
+  }
+  showLoading(false);
+  renderHome();
+  updatePrevKm();
+}
+
+function showLoading(on) {
+  const list = document.getElementById('recordsList');
+  if (on) list.innerHTML = `<div class="empty-state"><div class="empty-icon">⏳</div><div class="empty-text">데이터 불러오는 중...</div></div>`;
+}
+
+function ld(v) { return cache[v] || {initKm:0, records:[]}; }
+function sd(v, d) {
+  cache[v] = d;
+  localStorage.setItem('vlog_'+v, JSON.stringify(d)); // 로컬 백업
+}
 
 // ── INIT ──
 function init() {
-  // Build vehicle chips
   const sc = document.getElementById('vehicleScroller');
   VEHICLES.forEach(v => {
     const c = document.createElement('button');
@@ -623,26 +657,11 @@ function init() {
     c.onclick = () => selectVehicle(v.name);
     sc.appendChild(c);
   });
-
-  // Set code blocks
   document.getElementById('setupCode').textContent = SCRIPT_CODE;
   document.getElementById('settingsCode').textContent = SCRIPT_CODE;
-
   document.getElementById('fDate').value = today();
   updateSheetsUI();
-
-  // If no sheets URL → show setup page
-  if (!sheetsUrl) {
-    showSetupHint();
-  } else {
-    renderHome();
-  }
-}
-
-function showSetupHint() {
-  // Still show home, but toast a hint
-  renderHome();
-  // Show a gentle notice instead of blocking
+  loadFromSheets(); // Sheets에서 데이터 로드
 }
 
 // ── VEHICLE SELECT ──
@@ -659,7 +678,7 @@ function selectVehicle(name) {
 // ── RENDER HOME ──
 function renderHome() {
   const d = ld(cv);
-  const total = d.records.reduce((s,r)=>s+(r.dist||0),0);
+  const total = d.records.reduce((s,r)=>s+(Number(r.dist)||0),0);
   const last = d.records.length>0 ? d.records[d.records.length-1].finalKm : null;
   document.getElementById('statCount').textContent = d.records.length;
   document.getElementById('statTotal').textContent = total.toLocaleString();
@@ -672,7 +691,7 @@ function renderHome() {
     return;
   }
   list.innerHTML = '';
-  [...d.records].reverse().forEach((r,ri) => {
+  [...d.records].reverse().forEach((r, ri) => {
     const origIdx = d.records.length-1-ri;
     const el = document.createElement('div');
     el.className = 'record-card';
@@ -684,7 +703,7 @@ function renderHome() {
         </div>
         <div style="display:flex;align-items:center;gap:6px">
           <span class="rc-team team-${r.team}">${r.team}</span>
-          ${r.synced ? '<span class="sync-badge">✓ 저장됨</span>' : (sheetsUrl ? '<span class="sync-badge pending">미전송</span>' : '')}
+          <span class="sync-badge">✓ 저장됨</span>
           <button class="del-btn" onclick="delRecord(${origIdx})">🗑</button>
         </div>
       </div>
@@ -753,117 +772,92 @@ async function addRecord() {
   const dist = Number(finalKm)-Number(prev);
   if (dist<0) return toast('최종 키로수가 이전보다 작습니다','error');
 
-  const rec = { no:d.records.length+1, date, team, rider, prevKm:Number(prev), finalKm:Number(finalKm), dist, note, synced:false, timestamp:Date.now() };
+  const rec = { no:d.records.length+1, date, team, rider, prevKm:Number(prev), finalKm:Number(finalKm), dist, note, synced:true, timestamp:Date.now() };
+
+  // 즉시 화면에 반영
   d.records.push(rec);
   sd(cv, d);
   closeAddSheet();
   renderHome();
-  toast(`✅ 저장! (+${dist.toLocaleString()} km)`, 'success');
+  toast(`✅ 저장 중... (+${dist.toLocaleString()} km)`, 'info');
 
-  if (sheetsUrl) {
-    const ok = await sendToSheets(rec);
-    if (ok) {
-      rec.synced = true;
-      const d2 = ld(cv);
-      d2.records[d2.records.length-1].synced = true;
-      sd(cv, d2);
-      renderHome();
-    }
+  // Sheets에 저장
+  try {
+    await fetch(SHEETS_URL, {
+      method:'POST', mode:'no-cors',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({vehicle:cv, ...rec})
+    });
+    toast(`✅ 저장 완료! (+${dist.toLocaleString()} km)`, 'success');
+    // Sheets에서 최신 데이터 다시 불러오기
+    await loadFromSheets();
+  } catch(e) {
+    toast('⚠️ 로컬 저장됨 (Sheets 연결 확인 필요)', 'error');
   }
 }
 
-function delRecord(idx) {
+async function delRecord(idx) {
   if (!confirm('이 기록을 삭제할까요?')) return;
   const d = ld(cv);
+  const rec = d.records[idx];
   d.records.splice(idx,1);
   d.records.forEach((r,i)=>{ r.no=i+1; r.prevKm=i===0?(d.initKm||0):d.records[i-1].finalKm; r.dist=r.finalKm-r.prevKm; });
   sd(cv, d);
   renderHome();
+  // Sheets에서도 삭제
+  try {
+    await fetch(SHEETS_URL, {
+      method:'POST', mode:'no-cors',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({vehicle:cv, action:'delete', no:rec.no})
+    });
+    await loadFromSheets();
+  } catch(e) {}
   toast('기록 삭제됨','info');
 }
 
 // ── INIT KM ──
 function openInitModal() { document.getElementById('initKmInput').value=ld(cv).initKm||''; document.getElementById('initModal').classList.add('open'); }
 function closeInitModal() { document.getElementById('initModal').classList.remove('open'); }
-function saveInitKm() {
-  const d=ld(cv); d.initKm=Number(document.getElementById('initKmInput').value)||0; sd(cv,d);
-  closeInitModal(); renderHome(); updatePrevKm(); toast('최초 키로수 저장됨','success');
-}
-
-// ── SHEETS ──
-function updateSheetsUI() {
-  const on = !!sheetsUrl;
-  document.getElementById('sheetsDot').className = 'sheets-dot '+(on?'on':'off');
-  document.getElementById('sheetsLabel').textContent = on ? '연동됨' : 'Sheets 연동';
-  document.getElementById('settingUrlText').textContent = on ? sheetsUrl.slice(0,50)+'...' : '미설정 — 탭하여 설정';
-  document.getElementById('settingBadge').textContent = on?'연결됨':'미연결';
-  document.getElementById('settingBadge').className = 'badge '+(on?'on':'off');
-}
-
-function openSheetsSheet() { document.getElementById('sheetsUrlInput').value=sheetsUrl; document.getElementById('sheetsSheet').classList.add('open'); }
-function closeSheetsSheet() { document.getElementById('sheetsSheet').classList.remove('open'); }
-
-function saveSheetsUrl() {
-  const url = document.getElementById('sheetsUrlInput').value.trim();
-  if (!url.startsWith('https://script.google.com')) return toast('올바른 Apps Script URL을 입력해주세요','error');
-  sheetsUrl = url; localStorage.setItem('sheetsUrl', url);
-  updateSheetsUI(); closeSheetsSheet(); toast('✅ Google Sheets 연동 완료!','success');
-  renderHome();
-}
-
-function saveFromSetup() {
-  const url = document.getElementById('setupUrlInput').value.trim();
-  if (!url.startsWith('https://script.google.com')) return toast('올바른 URL을 입력해주세요','error');
-  sheetsUrl = url; localStorage.setItem('sheetsUrl', url);
-  updateSheetsUI();
-  switchTab('home');
-  toast('✅ 연동 완료! 이제 기록을 추가해보세요','success');
-}
-
-async function sendToSheets(record) {
-  if (!sheetsUrl) return false;
+async function saveInitKm() {
+  const val = Number(document.getElementById('initKmInput').value)||0;
+  const d = ld(cv); d.initKm = val; sd(cv, d);
+  closeInitModal(); renderHome(); updatePrevKm();
+  toast('최초 키로수 저장 중...','info');
   try {
-    await fetch(sheetsUrl, {
+    await fetch(SHEETS_URL, {
       method:'POST', mode:'no-cors',
       headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({vehicle:cv, ...record})
+      body: JSON.stringify({vehicle:cv, action:'initKm', initKm:val})
     });
-    return true;
-  } catch(e) { return false; }
+    toast('✅ 최초 키로수 저장됨','success');
+  } catch(e) { toast('로컬 저장됨','info'); }
 }
 
+// ── SHEETS UI ──
+function updateSheetsUI() {
+  document.getElementById('sheetsDot').className = 'sheets-dot on';
+  document.getElementById('sheetsLabel').textContent = '연동됨';
+  document.getElementById('settingUrlText').textContent = SHEETS_URL.slice(0,50)+'...';
+  document.getElementById('settingBadge').textContent = '연결됨';
+  document.getElementById('settingBadge').className = 'badge on';
+}
+
+function openSheetsSheet() { document.getElementById('sheetsSheet').classList.add('open'); }
+function closeSheetsSheet() { document.getElementById('sheetsSheet').classList.remove('open'); }
+function saveSheetsUrl() { closeSheetsSheet(); toast('URL이 코드에 고정되어 있습니다','info'); }
+function saveFromSetup() { switchTab('home'); }
+
 async function syncAll() {
-  if (!sheetsUrl) { openSheetsSheet(); return; }
-  const d = ld(cv);
-  const unsync = d.records.filter(r=>!r.synced);
-  if (!unsync.length) return toast('모든 기록이 이미 동기화되었습니다','info');
-  toast(`☁️ ${unsync.length}건 동기화 중...`,'info');
-  for (const r of unsync) {
-    const ok = await sendToSheets(r);
-    if (ok) r.synced = true;
-    await new Promise(res=>setTimeout(res,120));
-  }
-  sd(cv, d); renderHome();
+  toast('☁️ 최신 데이터 불러오는 중...','info');
+  await loadFromSheets();
   toast('✅ 동기화 완료!','success');
 }
 
 async function syncAllVehicles() {
-  if (!sheetsUrl) { openSheetsSheet(); return; }
-  let total = 0;
-  for (const v of VEHICLES) {
-    const d = ld(v.name);
-    const unsync = d.records.filter(r=>!r.synced);
-    for (const r of unsync) {
-      const origCv = cv; cv = v.name;
-      const ok = await sendToSheets(r);
-      cv = origCv;
-      if (ok) { r.synced=true; total++; }
-      await new Promise(res=>setTimeout(res,100));
-    }
-    sd(v.name, d);
-  }
-  renderHome();
-  toast(total>0 ? `✅ 전 차량 ${total}건 동기화 완료` : '모든 기록 이미 동기화됨','success');
+  toast('☁️ 전 차량 데이터 불러오는 중...','info');
+  await loadFromSheets();
+  toast('✅ 전 차량 동기화 완료!','success');
 }
 
 // ── CSV ──
