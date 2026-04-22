@@ -1052,32 +1052,26 @@ function goToday() {
 // resvCache: { vehicleName: [{date, slot, name, team, id}] }
 let resvCache = {};
 
-function loadResvFromSheets() {
-  return new Promise((resolve) => {
-    const cbName = 'resvCb_' + Date.now();
-    const script = document.createElement('script');
-    const timer = setTimeout(() => {
-      try { resvCache = JSON.parse(localStorage.getItem('resvCache')||'{}'); } catch { resvCache = {}; }
-      script.remove(); delete window[cbName]; resolve();
-    }, 5000);
-    window[cbName] = (json) => {
-      clearTimeout(timer);
-      if (json.result==='ok' && json.data) {
-        resvCache = json.data;
-        const myIds = JSON.parse(localStorage.getItem('myResvIds')||'[]');
-        Object.values(resvCache).forEach(arr => arr.forEach(r => { r.isMine = myIds.includes(r.id); }));
-        localStorage.setItem('resvCache', JSON.stringify(resvCache));
-      }
-      script.remove(); delete window[cbName]; resolve();
-    };
-    script.src = SHEETS_URL + '?action=getResv&callback=' + cbName;
-    script.onerror = () => {
-      clearTimeout(timer);
-      try { resvCache = JSON.parse(localStorage.getItem('resvCache')||'{}'); } catch { resvCache = {}; }
-      script.remove(); delete window[cbName]; resolve();
-    };
-    document.head.appendChild(script);
-  });
+async function loadResvFromSheets() {
+  try {
+    const res = await fetch(SHEETS_URL + '?action=getResv');
+    const json = await res.json();
+    if (json.result==='ok' && json.data) {
+      resvCache = json.data;
+      const myIds = JSON.parse(localStorage.getItem('myResvIds')||'[]');
+      Object.values(resvCache).forEach(arr => arr.forEach(r => {
+        if (r.date && r.date.includes('T')) {
+          const d = new Date(r.date);
+          d.setHours(d.getHours() + 9);
+          r.date = d.toISOString().split('T')[0];
+        }
+        r.isMine = myIds.includes(String(r.id));
+      }));
+      localStorage.setItem('resvCache', JSON.stringify(resvCache));
+    }
+  } catch(e) {
+    try { resvCache = JSON.parse(localStorage.getItem('resvCache')||'{}'); } catch { resvCache = {}; }
+  }
 }
 
 function renderResv() {
