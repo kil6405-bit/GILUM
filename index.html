@@ -606,7 +606,7 @@ const SCRIPT_CODE = `function doPost(e) {
 }`;
 
 let cv = VEHICLES[0].name; // current vehicle
-let sheetsUrl = localStorage.getItem('sheetsUrl') || '';
+let sheetsUrl = localStorage.getItem('sheetsUrl') || 'https://script.google.com/a/macros/guswc.org/s/AKfycbxzDJ3VgUF_amqxSBbE_bpkEKK0mxkcfBRhMHY0jsR1DBbUWZGQiLGQGNrbNf1F-muJuA/exec';
 
 function ld(v) { try { return JSON.parse(localStorage.getItem('vlog_'+v)) || {initKm:0,records:[]}; } catch { return {initKm:0,records:[]}; } }
 function sd(v,d) { localStorage.setItem('vlog_'+v, JSON.stringify(d)); }
