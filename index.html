@@ -1052,15 +1052,32 @@ function goToday() {
 // resvCache: { vehicleName: [{date, slot, name, team, id}] }
 let resvCache = {};
 
-async function loadResvFromSheets() {
-  try {
-    const res = await fetch(SHEETS_URL + '?action=getResv', {method:'GET', mode:'cors'});
-    const json = await res.json();
-    if (json.result==='ok' && json.data) resvCache = json.data;
-  } catch(e) {
-    // 로컬 폴백
-    try { resvCache = JSON.parse(localStorage.getItem('resvCache')||'{}'); } catch { resvCache = {}; }
-  }
+function loadResvFromSheets() {
+  return new Promise((resolve) => {
+    const cbName = 'resvCb_' + Date.now();
+    const script = document.createElement('script');
+    const timer = setTimeout(() => {
+      try { resvCache = JSON.parse(localStorage.getItem('resvCache')||'{}'); } catch { resvCache = {}; }
+      script.remove(); delete window[cbName]; resolve();
+    }, 5000);
+    window[cbName] = (json) => {
+      clearTimeout(timer);
+      if (json.result==='ok' && json.data) {
+        resvCache = json.data;
+        const myIds = JSON.parse(localStorage.getItem('myResvIds')||'[]');
+        Object.values(resvCache).forEach(arr => arr.forEach(r => { r.isMine = myIds.includes(r.id); }));
+        localStorage.setItem('resvCache', JSON.stringify(resvCache));
+      }
+      script.remove(); delete window[cbName]; resolve();
+    };
+    script.src = SHEETS_URL + '?action=getResv&callback=' + cbName;
+    script.onerror = () => {
+      clearTimeout(timer);
+      try { resvCache = JSON.parse(localStorage.getItem('resvCache')||'{}'); } catch { resvCache = {}; }
+      script.remove(); delete window[cbName]; resolve();
+    };
+    document.head.appendChild(script);
+  });
 }
 
 function renderResv() {
