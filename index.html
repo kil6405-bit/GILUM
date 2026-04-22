@@ -708,7 +708,7 @@ const SCRIPT_CODE = `function doPost(e) {
 }`;
 
 let cv = VEHICLES[0].name;
-const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbxzDJ3VgUF_amqxSBbE_bpkEKK0mxkcfBRhMHY0jsR1DBbUWZGQiLGQGNrbNf1F-muJuA/exec';
+const SHEETS_URL = '/api/proxy';
 
 // 메모리 캐시 (Sheets에서 불러온 데이터)
 let cache = {};
@@ -719,7 +719,7 @@ function today() { return new Date().toISOString().split('T')[0]; }
 async function loadFromSheets() {
   try {
     showLoading(true);
-    const res = await fetch(SHEETS_URL + '?action=getAll', {method:'GET', mode:'cors'});
+    const res = await fetch(SHEETS_URL + '?action=getAll', {method:'GET'});
     const json = await res.json();
     if (json.result === 'ok' && json.data) {
       cache = json.data;
@@ -886,7 +886,7 @@ async function addRecord() {
   // Sheets에 저장
   try {
     await fetch(SHEETS_URL, {
-      method:'POST', mode:'no-cors',
+      method:'POST',
       headers:{'Content-Type':'application/json'},
       body: JSON.stringify({vehicle:cv, ...rec})
     });
@@ -909,7 +909,7 @@ async function delRecord(idx) {
   // Sheets에서도 삭제
   try {
     await fetch(SHEETS_URL, {
-      method:'POST', mode:'no-cors',
+      method:'POST',
       headers:{'Content-Type':'application/json'},
       body: JSON.stringify({vehicle:cv, action:'delete', no:rec.no})
     });
@@ -928,7 +928,7 @@ async function saveInitKm() {
   toast('최초 키로수 저장 중...','info');
   try {
     await fetch(SHEETS_URL, {
-      method:'POST', mode:'no-cors',
+      method:'POST',
       headers:{'Content-Type':'application/json'},
       body: JSON.stringify({vehicle:cv, action:'initKm', initKm:val})
     });
@@ -1152,7 +1152,7 @@ async function submitReservation() {
   // Sheets에 저장
   try {
     await fetch(SHEETS_URL, {
-      method:'POST', mode:'no-cors',
+      method:'POST',
       headers:{'Content-Type':'application/json'},
       body: JSON.stringify({action:'addResv', id, vehicle, date, slot, name, team})
     });
@@ -1179,7 +1179,7 @@ async function confirmCancel() {
   toast('예약이 취소되었습니다','info');
   try {
     await fetch(SHEETS_URL, {
-      method:'POST', mode:'no-cors',
+      method:'POST',
       headers:{'Content-Type':'application/json'},
       body: JSON.stringify({action:'cancelResv', id, vehicle})
     });
