@@ -361,6 +361,7 @@ body { font-family: 'Noto Sans KR', sans-serif; background: var(--bg); color: va
       <div class="sheets-dot off" id="sheetsDot"></div>
       <span id="sheetsLabel">Sheets 연동</span>
     </button>
+    <button class="icon-btn" onclick="refreshHome()" id="homeRefreshBtn" title="새로고침">🔄</button>
     <button class="icon-btn" onclick="exportCSV()" title="CSV">📥</button>
   </div>
 </div>
@@ -763,13 +764,23 @@ async function loadFromSheets() {
       cache = json.data;
       // 없는 차량은 빈 데이터로 초기화
       VEHICLES.forEach(v => { if (!cache[v.name]) cache[v.name] = {initKm:0, records:[]}; });
-      // 날짜 형식 정규화
+      // 날짜/시간 형식 정규화
       Object.values(cache).forEach(vData => {
         if (vData.records) vData.records.forEach(r => {
-          if (r.date && r.date.includes('T')) {
+          // 날짜 정규화
+          if (r.date && String(r.date).includes('T')) {
             const d = new Date(r.date);
             d.setHours(d.getHours() + 9);
             r.date = d.toISOString().split('T')[0];
+          }
+          // 시간 정규화 (1899-12-30T... 형식 처리)
+          if (r.startTime && String(r.startTime).includes('T')) {
+            const t = new Date(r.startTime);
+            r.startTime = String(t.getUTCHours()).padStart(2,'0') + ':' + String(t.getUTCMinutes()).padStart(2,'0');
+          }
+          if (r.endTime && String(r.endTime).includes('T')) {
+            const t = new Date(r.endTime);
+            r.endTime = String(t.getUTCHours()).padStart(2,'0') + ':' + String(t.getUTCMinutes()).padStart(2,'0');
           }
         });
       });
@@ -828,6 +839,14 @@ function selectVehicle(name) {
 }
 
 // ── RENDER HOME ──
+async function refreshHome() {
+  const btn = document.getElementById('homeRefreshBtn');
+  btn.textContent = '⏳';
+  await loadFromSheets();
+  btn.textContent = '🔄';
+  toast('✅ 운행 기록 새로고침 완료!', 'success');
+}
+
 function renderHome() {
   const d = ld(cv);
   const total = d.records.reduce((s,r)=>s+(Number(r.dist)||0),0);
