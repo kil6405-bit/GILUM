@@ -618,6 +618,11 @@ body { font-family: 'Noto Sans KR', sans-serif; background: var(--bg); color: va
         </select>
       </div>
       <div class="fg"><div class="fl">탑승자 <span class="fr">*</span></div><input type="text" class="fi" id="fRider" placeholder="예: 오동주" autocomplete="off"></div>
+      <div class="fg"><div class="fl">운행 목적 <span class="fr">*</span></div><input type="text" class="fi" id="fPurpose" placeholder="예: 가정방문, 물품배송, 업무출장" autocomplete="off"></div>
+      <div class="two-col fg">
+        <div><div class="fl">출발 시간 <span class="fr">*</span></div><input type="time" class="fi" id="fStartTime"></div>
+        <div><div class="fl">도착 시간 <span class="fr">*</span></div><input type="time" class="fi" id="fEndTime"></div>
+      </div>
       <div class="two-col fg">
         <div><div class="fl">이전 키로수</div><input type="text" class="fi" id="fPrevKm" readonly placeholder="자동"></div>
         <div><div class="fl">최종 키로수 <span class="fr">*</span></div><input type="number" class="fi" id="fFinalKm" placeholder="직접 입력" inputmode="numeric" oninput="onKmInput()"></div>
@@ -846,6 +851,7 @@ function renderHome() {
       </div>
       <div class="rc-body">
         <div class="rc-rider">👤 ${r.rider}</div>
+        ${r.purpose ? `<div style="font-size:12px;color:var(--sub);margin-bottom:6px">🎯 ${r.purpose}${r.startTime&&r.endTime?' &nbsp;|&nbsp; ⏱ '+r.startTime+'~'+r.endTime:''}</div>` : ''}
         <div class="km-row">
           <div class="km-box"><div class="km-lbl">이전</div><div class="km-val">${Number(r.prevKm).toLocaleString()}</div></div>
           <div class="km-arr">→</div>
@@ -883,6 +889,9 @@ function openAddSheet() {
   updatePrevKm();
   document.getElementById('fFinalKm').value = '';
   document.getElementById('fNote').value = '';
+  document.getElementById('fPurpose').value = '';
+  document.getElementById('fStartTime').value = '';
+  document.getElementById('fEndTime').value = '';
   document.getElementById('addSheet').classList.add('open');
   document.getElementById('fab').style.display = 'none';
   setTimeout(()=>document.getElementById('fFinalKm').focus(), 380);
@@ -898,10 +907,16 @@ async function addRecord() {
   const rider = document.getElementById('fRider').value.trim();
   const finalKm = document.getElementById('fFinalKm').value;
   const note = document.getElementById('fNote').value.trim();
+  const purpose = document.getElementById('fPurpose').value.trim();
+  const startTime = document.getElementById('fStartTime').value;
+  const endTime = document.getElementById('fEndTime').value;
 
   if (!date) return toast('날짜를 입력해주세요','error');
   if (!team) return toast('부서를 선택해주세요','error');
   if (!rider) return toast('탑승자를 입력해주세요','error');
+  if (!purpose) return toast('운행 목적을 입력해주세요','error');
+  if (!startTime) return toast('출발 시간을 입력해주세요','error');
+  if (!endTime) return toast('도착 시간을 입력해주세요','error');
   if (!finalKm) return toast('최종 키로수를 입력해주세요','error');
 
   const d = ld(cv);
@@ -909,7 +924,7 @@ async function addRecord() {
   const dist = Number(finalKm)-Number(prev);
   if (dist<0) return toast('최종 키로수가 이전보다 작습니다','error');
 
-  const rec = { no:d.records.length+1, date, team, rider, prevKm:Number(prev), finalKm:Number(finalKm), dist, note, synced:true, timestamp:Date.now() };
+  const rec = { no:d.records.length+1, date, team, rider, purpose, startTime, endTime, prevKm:Number(prev), finalKm:Number(finalKm), dist, note, synced:true, timestamp:Date.now() };
 
   // 즉시 화면에 반영
   d.records.push(rec);
@@ -1001,8 +1016,8 @@ async function syncAllVehicles() {
 function doCSV(vehicleName) {
   const d = ld(vehicleName);
   if (!d.records.length) return false;
-  const rows=[['번호','날짜','부서','탑승자','이전km','최종km','운행거리(km)','특이사항']];
-  d.records.forEach(r=>rows.push([r.no,r.date,r.team,r.rider,r.prevKm,r.finalKm,r.dist,r.note||'']));
+  const rows=[['번호','날짜','부서','탑승자','운행목적','출발시간','도착시간','이전km','최종km','운행거리(km)','특이사항']];
+  d.records.forEach(r=>rows.push([r.no,r.date,r.team,r.rider,r.purpose||'',r.startTime||'',r.endTime||'',r.prevKm,r.finalKm,r.dist,r.note||'']));
   const csv='\uFEFF'+rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
   const a=document.createElement('a');
   a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
@@ -1046,8 +1061,8 @@ function exportMonthExcel() {
     if (!records.length) return;
     hasData = true;
 
-    const rows = [['번호', '날짜', '부서', '탑승자', '이전 키로수', '최종 키로수', '운행거리(km)', '특이사항']];
-    records.forEach(r => rows.push([r.no, r.date, r.team, r.rider, Number(r.prevKm), Number(r.finalKm), Number(r.dist), r.note||'']));
+    const rows = [['번호', '날짜', '부서', '탑승자', '운행목적', '출발', '도착', '이전(km)', '최종(km)', '운행거리', '특이사항']];
+    records.forEach(r => rows.push([r.no, r.date, r.team, r.rider, r.purpose||'', r.startTime||'', r.endTime||'', Number(r.prevKm), Number(r.finalKm), Number(r.dist), r.note||'']));
 
     // 합계 행
     const total = records.reduce((s,r) => s + Number(r.dist||0), 0);
@@ -1093,8 +1108,8 @@ function exportMonthPDF() {
       h2 { font-size: 13px; font-weight: 700; color: #1a3a6b; margin: 18px 0 6px; padding-bottom: 4px; border-bottom: 2px solid #1a3a6b; }
       .meta { font-size: 11px; color: #64748b; margin-bottom: 16px; }
       table { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
-      th { background: #1a3a6b; color: #fff; padding: 6px 8px; font-size: 11px; text-align: center; }
-      td { padding: 5px 8px; border: 1px solid #e2e8f0; font-size: 11px; text-align: center; }
+      th { background: #1a3a6b; color: #fff; padding: 6px 6px; font-size: 10px; text-align: center; }
+      td { padding: 5px 6px; border: 1px solid #e2e8f0; font-size: 10px; text-align: center; }
       tr:nth-child(even) td { background: #eff6ff; }
       .total-row td { background: #fef3c7 !important; font-weight: 700; }
       .no-data { color: #94a3b8; font-size: 12px; padding: 10px; text-align: center; }
@@ -1114,18 +1129,19 @@ function exportMonthPDF() {
     hasData = true;
     const total = records.reduce((s,r) => s + Number(r.dist||0), 0);
     html += `<table><thead><tr>
-      <th>No</th><th>날짜</th><th>부서</th><th>탑승자</th>
-      <th>이전(km)</th><th>최종(km)</th><th>운행거리</th><th>특이사항</th>
+      <th>No</th><th>날짜</th><th>부서</th><th>탑승자</th><th>운행목적</th>
+      <th>출발</th><th>도착</th><th>이전(km)</th><th>최종(km)</th><th>운행거리</th><th>특이사항</th>
     </tr></thead><tbody>`;
     records.forEach(r => {
       html += `<tr>
         <td>${r.no}</td><td>${r.date}</td><td>${r.team}</td><td>${r.rider}</td>
+        <td>${r.purpose||''}</td><td>${r.startTime||''}</td><td>${r.endTime||''}</td>
         <td>${Number(r.prevKm).toLocaleString()}</td><td>${Number(r.finalKm).toLocaleString()}</td>
         <td><strong>${Number(r.dist).toLocaleString()} km</strong></td><td>${r.note||''}</td>
       </tr>`;
     });
     html += `<tr class="total-row">
-      <td colspan="6" style="text-align:right;font-weight:700">총 운행거리</td>
+      <td colspan="9" style="text-align:right;font-weight:700">총 운행거리</td>
       <td><strong>${total.toLocaleString()} km</strong></td><td></td>
     </tr>`;
     html += `</tbody></table>`;
