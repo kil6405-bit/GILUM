@@ -5,7 +5,7 @@ export default async function handler(req, res) {
   
   if (req.method === 'OPTIONS') { return res.status(200).end(); }
 
-  const SHEETS_URL = 'https://script.google.com/a/macros/guswc.org/s/AKfycbzDL1Q8Z4okSfkNJ2_I5cpk3Zf8UWdq5mU6WjWnZOUcBwC-gYJcE8Tl2OhUoe4LpDdnUQ/exec';
+  const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbzgQzEIKHwkPd0-hmrjNRDbJsdoQLGrErng2C3Ul1qj6FXo-ZGmpiYtRxuwA_5jyvQY/exec';
 
   try {
     if (req.method === 'GET') {
@@ -15,8 +15,7 @@ export default async function handler(req, res) {
       const response = await fetch(url, { redirect: 'follow' });
       const text = await response.text();
       try {
-        const json = JSON.parse(text);
-        return res.status(200).json(json);
+        return res.status(200).json(JSON.parse(text));
       } catch {
         return res.status(200).send(text);
       }
