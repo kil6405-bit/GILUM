@@ -5,7 +5,7 @@ export default async function handler(req, res) {
   
   if (req.method === 'OPTIONS') { return res.status(200).end(); }
 
-  const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbxzDJ3VgUF_amqxSBbE_bpkEKK0mxkcfBRhMHY0jsR1DBbUWZGQiLGQGNrbNf1F-muJuA/exec';
+  const SHEETS_URL = 'https://script.google.com/a/macros/guswc.org/s/AKfycbzDL1Q8Z4okSfkNJ2_I5cpk3Zf8UWdq5mU6WjWnZOUcBwC-gYJcE8Tl2OhUoe4LpDdnUQ/exec';
 
   try {
     if (req.method === 'GET') {
