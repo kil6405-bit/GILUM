@@ -8,6 +8,7 @@
 <meta name="theme-color" content="#0f2244">
 <title>차량 운행 일지 | 길음종합사회복지관</title>
 <link rel="manifest" href="manifest.json">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;900&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -528,7 +529,38 @@ body { font-family: 'Noto Sans KR', sans-serif; background: var(--bg); color: va
         </div>
       </div>
 
-      <div class="sec-title">Apps Script 코드</div>
+      <div class="sec-title">📅 월별 사용대장 출력</div>
+      <div class="scard">
+        <div style="padding:14px 15px">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+            <div>
+              <div class="fl" style="font-size:11px;font-weight:700;color:var(--sub);margin-bottom:5px">차량 선택</div>
+              <select class="fs" id="exportVehicle" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;font-family:'Noto Sans KR',sans-serif;background:#fff;appearance:none;outline:none">
+                <option value="ALL">전체 차량</option>
+                <option>포터</option>
+                <option>구모닝(5834)</option>
+                <option>26모닝(1539)</option>
+                <option>민트레이(복지관)</option>
+                <option>스타렉스(복지관)</option>
+                <option>레이(이목)</option>
+                <option>레이(길음실버사업단)</option>
+                <option>레이(센터)</option>
+                <option>스타렉스(복지센터)</option>
+              </select>
+            </div>
+            <div>
+              <div class="fl" style="font-size:11px;font-weight:700;color:var(--sub);margin-bottom:5px">월 선택</div>
+              <input type="month" id="exportMonth" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;font-family:'Noto Sans KR',sans-serif;background:#fff;outline:none">
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <button class="submit-btn" onclick="exportMonthExcel()" style="padding:12px;font-size:13px;background:linear-gradient(135deg,#059669,#047857)">📊 엑셀 다운로드</button>
+            <button class="submit-btn" onclick="exportMonthPDF()" style="padding:12px;font-size:13px;background:linear-gradient(135deg,#dc2626,#b91c1c)">🖨️ PDF 출력</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="sec-title">데이터 (CSV)</div>
       <div class="scard">
         <div class="srow" onclick="toggleCode()">
           <div class="srow-ico">📋</div>
@@ -763,6 +795,8 @@ function init() {
   document.getElementById('setupCode').textContent = SCRIPT_CODE;
   document.getElementById('settingsCode').textContent = SCRIPT_CODE;
   document.getElementById('fDate').value = today();
+  // 월별 출력 기본값 = 현재 월
+  document.getElementById('exportMonth').value = today().slice(0,7);
   updateSheetsUI();
   loadFromSheets(); // Sheets에서 데이터 로드
 }
@@ -980,6 +1014,129 @@ async function exportAllCSV() {
   let cnt=0;
   for (const v of VEHICLES) { if(doCSV(v.name)){cnt++;await new Promise(res=>setTimeout(res,300));} }
   toast(cnt>0?`📥 ${cnt}개 차량 CSV 다운로드`:'내보낼 기록이 없습니다', cnt>0?'success':'info');
+}
+
+// ── 월별 내보내기 ──
+function getExportTargets() {
+  const v = document.getElementById('exportVehicle').value;
+  const m = document.getElementById('exportMonth').value;
+  if (!m) { toast('월을 선택해주세요', 'error'); return null; }
+  const vehicles = v === 'ALL' ? VEHICLES.map(x=>x.name) : [v];
+  return { vehicles, month: m };
+}
+
+function getMonthRecords(vehicleName, month) {
+  const d = ld(vehicleName);
+  return d.records.filter(r => r.date && r.date.startsWith(month));
+}
+
+// 엑셀 내보내기
+function exportMonthExcel() {
+  const target = getExportTargets();
+  if (!target) return;
+  const { vehicles, month } = target;
+
+  if (typeof XLSX === 'undefined') { toast('라이브러리 로딩 중... 잠시 후 다시 시도해주세요', 'info'); return; }
+
+  const wb = XLSX.utils.book_new();
+  let hasData = false;
+
+  vehicles.forEach(vName => {
+    const records = getMonthRecords(vName, month);
+    if (!records.length) return;
+    hasData = true;
+
+    const rows = [['번호', '날짜', '부서', '탑승자', '이전 키로수', '최종 키로수', '운행거리(km)', '특이사항']];
+    records.forEach(r => rows.push([r.no, r.date, r.team, r.rider, Number(r.prevKm), Number(r.finalKm), Number(r.dist), r.note||'']));
+
+    // 합계 행
+    const total = records.reduce((s,r) => s + Number(r.dist||0), 0);
+    rows.push(['', '', '', '합계', '', '', total, '']);
+
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+
+    // 컬럼 너비
+    ws['!cols'] = [{wch:5},{wch:12},{wch:12},{wch:12},{wch:13},{wch:13},{wch:13},{wch:25}];
+
+    // 헤더 스타일 (배경색)
+    const range = XLSX.utils.decode_range(ws['!ref']);
+    for (let C = range.s.c; C <= range.e.c; C++) {
+      const cell = ws[XLSX.utils.encode_cell({r:0, c:C})];
+      if (cell) {
+        cell.s = { fill:{fgColor:{rgb:'1A3A6B'}}, font:{color:{rgb:'FFFFFF'}, bold:true}, alignment:{horizontal:'center'} };
+      }
+    }
+
+    const sheetName = vName.length > 31 ? vName.slice(0,31) : vName;
+    XLSX.utils.book_append_sheet(wb, ws, sheetName);
+  });
+
+  if (!hasData) { toast('해당 월에 기록이 없습니다', 'info'); return; }
+
+  const fileName = `차량사용대장_${month}.xlsx`;
+  XLSX.writeFile(wb, fileName);
+  toast(`📊 ${fileName} 다운로드 완료!`, 'success');
+}
+
+// PDF 출력
+function exportMonthPDF() {
+  const target = getExportTargets();
+  if (!target) return;
+  const { vehicles, month } = target;
+
+  const [year, mon] = month.split('-');
+  let html = `
+    <html><head><meta charset="UTF-8">
+    <style>
+      body { font-family: 'Noto Sans KR', sans-serif; padding: 20px; font-size: 12px; color: #0f172a; }
+      h1 { font-size: 16px; font-weight: 900; color: #0f2244; margin-bottom: 4px; }
+      h2 { font-size: 13px; font-weight: 700; color: #1a3a6b; margin: 18px 0 6px; padding-bottom: 4px; border-bottom: 2px solid #1a3a6b; }
+      .meta { font-size: 11px; color: #64748b; margin-bottom: 16px; }
+      table { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
+      th { background: #1a3a6b; color: #fff; padding: 6px 8px; font-size: 11px; text-align: center; }
+      td { padding: 5px 8px; border: 1px solid #e2e8f0; font-size: 11px; text-align: center; }
+      tr:nth-child(even) td { background: #eff6ff; }
+      .total-row td { background: #fef3c7 !important; font-weight: 700; }
+      .no-data { color: #94a3b8; font-size: 12px; padding: 10px; text-align: center; }
+      @media print { @page { margin: 15mm; } }
+    </style></head><body>
+    <h1>🚐 차량 운행 사용대장</h1>
+    <div class="meta">길음종합사회복지관 | ${year}년 ${mon}월 | 출력일: ${today()}</div>`;
+
+  let hasData = false;
+  vehicles.forEach(vName => {
+    const records = getMonthRecords(vName, month);
+    html += `<h2>${vName}</h2>`;
+    if (!records.length) {
+      html += `<div class="no-data">해당 월 운행 기록 없음</div>`;
+      return;
+    }
+    hasData = true;
+    const total = records.reduce((s,r) => s + Number(r.dist||0), 0);
+    html += `<table><thead><tr>
+      <th>No</th><th>날짜</th><th>부서</th><th>탑승자</th>
+      <th>이전(km)</th><th>최종(km)</th><th>운행거리</th><th>특이사항</th>
+    </tr></thead><tbody>`;
+    records.forEach(r => {
+      html += `<tr>
+        <td>${r.no}</td><td>${r.date}</td><td>${r.team}</td><td>${r.rider}</td>
+        <td>${Number(r.prevKm).toLocaleString()}</td><td>${Number(r.finalKm).toLocaleString()}</td>
+        <td><strong>${Number(r.dist).toLocaleString()} km</strong></td><td>${r.note||''}</td>
+      </tr>`;
+    });
+    html += `<tr class="total-row">
+      <td colspan="6" style="text-align:right;font-weight:700">총 운행거리</td>
+      <td><strong>${total.toLocaleString()} km</strong></td><td></td>
+    </tr>`;
+    html += `</tbody></table>`;
+  });
+
+  html += `</body></html>`;
+
+  const w = window.open('', '_blank');
+  w.document.write(html);
+  w.document.close();
+  setTimeout(() => { w.focus(); w.print(); }, 500);
 }
 
 // ── CODE ──
