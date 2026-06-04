@@ -763,6 +763,16 @@ async function loadFromSheets() {
       cache = json.data;
       // 없는 차량은 빈 데이터로 초기화
       VEHICLES.forEach(v => { if (!cache[v.name]) cache[v.name] = {initKm:0, records:[]}; });
+      // 날짜 형식 정규화
+      Object.values(cache).forEach(vData => {
+        if (vData.records) vData.records.forEach(r => {
+          if (r.date && r.date.includes('T')) {
+            const d = new Date(r.date);
+            d.setHours(d.getHours() + 9);
+            r.date = d.toISOString().split('T')[0];
+          }
+        });
+      });
     }
   } catch(e) {
     // CORS 실패 시 localStorage 폴백
