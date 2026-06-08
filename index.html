@@ -538,15 +538,13 @@ body { font-family: 'Noto Sans KR', sans-serif; background: var(--bg); color: va
               <div class="fl" style="font-size:11px;font-weight:700;color:var(--sub);margin-bottom:5px">차량 선택</div>
               <select class="fs" id="exportVehicle" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;font-family:'Noto Sans KR',sans-serif;background:#fff;appearance:none;outline:none">
                 <option value="ALL">전체 차량</option>
-                <option>포터</option>
-                <option>구모닝(5834)</option>
-                <option>26모닝(1539)</option>
-                <option>민트레이(복지관)</option>
-                <option>스타렉스(복지관)</option>
-                <option>레이(이목)</option>
-                <option>레이(길음실버사업단)</option>
-                <option>레이(센터)</option>
-                <option>스타렉스(복지센터)</option>
+                <option>이목레이(5803)</option>
+                <option>이목모닝(1539)</option>
+                <option>복지관레이(8074)</option>
+                <option>뉴모닝(5834)</option>
+                <option>포터(2948)</option>
+                <option>스타렉스(3015)</option>
+                <option>실버사업단(3041)</option>
               </select>
             </div>
             <div>
@@ -710,10 +708,13 @@ body { font-family: 'Noto Sans KR', sans-serif; background: var(--bg); color: va
 
 <script>
 const VEHICLES = [
-  {name:"포터",emoji:"🚛"},{name:"구모닝(5834)",emoji:"🚗"},{name:"26모닝(1539)",emoji:"🚗"},
-  {name:"민트레이(복지관)",emoji:"🚙"},{name:"스타렉스(복지관)",emoji:"🚐"},
-  {name:"레이(이목)",emoji:"🚗"},{name:"레이(길음실버사업단)",emoji:"🚗"},
-  {name:"레이(센터)",emoji:"🚗"},{name:"스타렉스(복지센터)",emoji:"🚐"}
+  {name:"이목레이(5803)",emoji:"🚗"},
+  {name:"이목모닝(1539)",emoji:"🚗"},
+  {name:"복지관레이(8074)",emoji:"🚗"},
+  {name:"뉴모닝(5834)",emoji:"🚗"},
+  {name:"포터(2948)",emoji:"🚛"},
+  {name:"스타렉스(3015)",emoji:"🚐"},
+  {name:"실버사업단(3041)",emoji:"🚗"}
 ];
 
 const SCRIPT_CODE = `function doPost(e) {
