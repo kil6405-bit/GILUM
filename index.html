@@ -585,7 +585,7 @@ body { font-family: 'Noto Sans KR', sans-serif; background: var(--bg); color: va
 </div>
 
 <!-- FAB -->
-<button class="fab" id="fab" onclick="openAddSheet()">＋</button>
+<button class="fab" id="fab" onclick="onFabClick()">＋</button>
 
 <!-- TAB BAR -->
 <div class="tab-bar">
@@ -686,6 +686,65 @@ body { font-family: 'Noto Sans KR', sans-serif; background: var(--bg); color: va
         </select>
       </div>
       <button class="submit-btn" onclick="submitReservation()">예약 확정하기</button>
+    </div>
+  </div>
+</div>
+
+<!-- DIRECT RESERVATION SHEET -->
+<div class="sheet-overlay" id="directResvSheet" onclick="if(event.target===this)closeDirectResvSheet()">
+  <div class="bottom-sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-hdr">
+      <div class="sheet-title">📅 차량 예약 추가</div>
+      <button class="sheet-close" onclick="closeDirectResvSheet()">✕</button>
+    </div>
+    <div class="sheet-body">
+      <div class="fg"><div class="fl">차량 선택 <span class="fr">*</span></div>
+        <select class="fs" id="drVehicle">
+          <option value="">— 차량 선택 —</option>
+          <option>이목레이(5803)</option>
+          <option>이목모닝(1539)</option>
+          <option>복지관레이(8074)</option>
+          <option>뉴모닝(5834)</option>
+          <option>포터(2948)</option>
+          <option>스타렉스(3015)</option>
+          <option>실버사업단(3041)</option>
+        </select>
+      </div>
+      <div class="fg"><div class="fl">날짜 <span class="fr">*</span></div>
+        <input type="date" class="fi" id="drDate">
+      </div>
+      <div class="two-col fg">
+        <div><div class="fl">시작 시간 <span class="fr">*</span></div>
+          <select class="fs" id="drStartSlot" onchange="checkSlotConflict()">
+            <option value="">— 선택 —</option>
+            <option>08:00</option><option>09:00</option><option>10:00</option>
+            <option>11:00</option><option>12:00</option><option>13:00</option>
+            <option>14:00</option><option>15:00</option><option>16:00</option>
+            <option>17:00</option><option>18:00</option><option>19:00</option>
+          </select>
+        </div>
+        <div><div class="fl">종료 시간 <span class="fr">*</span></div>
+          <select class="fs" id="drEndSlot" onchange="checkSlotConflict()">
+            <option value="">— 선택 —</option>
+            <option>09:00</option><option>10:00</option><option>11:00</option>
+            <option>12:00</option><option>13:00</option><option>14:00</option>
+            <option>15:00</option><option>16:00</option><option>17:00</option>
+            <option>18:00</option><option>19:00</option><option>20:00</option>
+          </select>
+        </div>
+      </div>
+      <div class="fg"><div class="fl">예약자 이름 <span class="fr">*</span></div>
+        <input type="text" class="fi" id="drName" placeholder="예: 오동주" autocomplete="off">
+      </div>
+      <div class="fg"><div class="fl">부서 <span class="fr">*</span></div>
+        <select class="fs" id="drTeam">
+          <option value="">— 부서 선택 —</option>
+          <option>기획운영</option><option>마을동행</option><option>마을돌봄</option><option>마을성장</option><option>마을공동체</option>
+        </select>
+      </div>
+      <div class="dist-preview" id="drConflict" style="display:none"></div>
+      <button class="submit-btn" onclick="submitDirectReservation()">예약 확정하기</button>
     </div>
   </div>
 </div>
@@ -1200,7 +1259,7 @@ function switchTab(tab) {
     document.getElementById('page-'+t).classList.toggle('active',t===tab);
     document.getElementById('tab-'+t).classList.toggle('active',t===tab);
   });
-  document.getElementById('fab').style.display = tab==='home'?'flex':'none';
+  document.getElementById('fab').style.display = tab==='settings'?'none':'flex';
   if (tab==='home') renderHome();
   if (tab==='resv') renderResv();
 }
@@ -1390,6 +1449,119 @@ async function confirmCancel() {
       body: JSON.stringify({action:'cancelResv', id, vehicle})
     });
   } catch(e) {}
+}
+
+// ── FAB 클릭 (탭에 따라 다른 동작) ──
+function onFabClick() {
+  const activeTab = document.querySelector('.tab-item.active')?.id;
+  if (activeTab === 'tab-resv') {
+    openDirectResvSheet();
+  } else {
+    openAddSheet();
+  }
+}
+
+// ── 직접 예약 시트 ──
+function openDirectResvSheet() {
+  const d = document;
+  d.getElementById('drDate').value = (typeof resvSelectedDate !== 'undefined' && resvSelectedDate) ? resvSelectedDate : today();
+  d.getElementById('drVehicle').value = '';
+  d.getElementById('drStartSlot').value = '';
+  d.getElementById('drEndSlot').value = '';
+  d.getElementById('drName').value = '';
+  d.getElementById('drTeam').value = '';
+  d.getElementById('drConflict').style.display = 'none';
+  d.getElementById('directResvSheet').classList.add('open');
+  document.getElementById('fab').style.display = 'none';
+}
+function closeDirectResvSheet() {
+  document.getElementById('directResvSheet').classList.remove('open');
+  document.getElementById('fab').style.display = 'flex';
+}
+
+function checkSlotConflict() {
+  const vehicle = document.getElementById('drVehicle').value;
+  const date = document.getElementById('drDate').value;
+  const start = document.getElementById('drStartSlot').value;
+  const end = document.getElementById('drEndSlot').value;
+  const conflict = document.getElementById('drConflict');
+  if (!vehicle || !date || !start || !end) { conflict.style.display='none'; return; }
+  const startH = parseInt(start);
+  const endH = parseInt(end);
+  if (endH <= startH) {
+    conflict.textContent = '⚠️ 종료 시간이 시작 시간보다 늦어야 해요!';
+    conflict.className = 'dist-preview show warn'; conflict.style.display='block'; return;
+  }
+  const slots = [];
+  for (let h = startH; h < endH; h++) {
+    slots.push(`${String(h).padStart(2,'0')}:00~${String(h+1).padStart(2,'0')}:00`);
+  }
+  const taken = (resvCache[vehicle]||[]).filter(r => r.date===date && slots.includes(r.slot));
+  if (taken.length > 0) {
+    conflict.textContent = `⚠️ ${taken.map(r=>r.slot+' ('+r.name+')').join(', ')} 이미 예약됨!`;
+    conflict.className = 'dist-preview show warn'; conflict.style.display='block';
+  } else if (slots.length > 0) {
+    conflict.textContent = `✅ ${start}~${end} (${slots.length}시간) 예약 가능!`;
+    conflict.className = 'dist-preview show'; conflict.style.display='block';
+  }
+}
+
+async function submitDirectReservation() {
+  const vehicle = document.getElementById('drVehicle').value;
+  const date = document.getElementById('drDate').value;
+  const start = document.getElementById('drStartSlot').value;
+  const end = document.getElementById('drEndSlot').value;
+  const name = document.getElementById('drName').value.trim();
+  const team = document.getElementById('drTeam').value;
+
+  if (!vehicle) return toast('차량을 선택해주세요', 'error');
+  if (!date) return toast('날짜를 선택해주세요', 'error');
+  if (!start || !end) return toast('시간을 선택해주세요', 'error');
+  if (!name) return toast('예약자 이름을 입력해주세요', 'error');
+  if (!team) return toast('부서를 선택해주세요', 'error');
+
+  const startH = parseInt(start);
+  const endH = parseInt(end);
+  if (endH <= startH) return toast('종료 시간이 시작 시간보다 늦어야 해요', 'error');
+
+  // 슬롯 목록 생성
+  const slots = [];
+  for (let h = startH; h < endH; h++) {
+    slots.push(`${String(h).padStart(2,'0')}:00~${String(h+1).padStart(2,'0')}:00`);
+  }
+
+  // 중복 체크
+  const taken = (resvCache[vehicle]||[]).filter(r => r.date===date && slots.includes(r.slot));
+  if (taken.length > 0) {
+    toast(`⚠️ ${taken.map(r=>r.slot).join(', ')} 이미 예약된 시간대예요!`, 'error');
+    return;
+  }
+
+  const myIds = JSON.parse(localStorage.getItem('myResvIds') || '[]');
+  if (!resvCache[vehicle]) resvCache[vehicle] = [];
+
+  // 각 슬롯별로 저장
+  for (const slot of slots) {
+    const id = String(Date.now() + Math.random());
+    const resv = { id, vehicle, date, slot, name, team };
+    resvCache[vehicle].push(resv);
+    myIds.push(id);
+    try {
+      await fetch(SHEETS_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'addResv', ...resv })
+      });
+    } catch(e) { console.warn('예약 저장 실패', e); }
+    await new Promise(res => setTimeout(res, 80));
+  }
+
+  localStorage.setItem('resvCache', JSON.stringify(resvCache));
+  localStorage.setItem('myResvIds', JSON.stringify(myIds));
+
+  closeDirectResvSheet();
+  buildWeek(); renderResvSlots();
+  toast(`✅ ${vehicle} ${date} ${start}~${end} (${slots.length}시간) 예약 완료!`, 'success');
 }
 
 // ── TOAST ──
