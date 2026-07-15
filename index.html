@@ -620,7 +620,7 @@ body { font-family: 'Noto Sans KR', sans-serif; background: var(--bg); color: va
       </div>
       <div class="fg"><div class="fl">탑승자 <span class="fr">*</span></div><input type="text" class="fi" id="fRider" placeholder="예: 오동주" autocomplete="off"></div>
       <div class="fg"><div class="fl">목적지 <span class="fr">*</span></div><input type="text" class="fi" id="fDestination" placeholder="예: 돈암동 복지관, 성북구청" autocomplete="off"></div>
-      <div class="fg"><div class="fl">활용 목적 <span class="fr">*</span></div><input type="text" class="fi" id="fPurpose" placeholder="예: 가정방문, 물품배송, 업무출장" autocomplete="off"></div>
+      <div class="fg"><div class="fl">운행 목적 <span class="fr">*</span></div><input type="text" class="fi" id="fPurpose" placeholder="예: 가정방문, 물품배송, 업무출장" autocomplete="off"></div>
       <div class="two-col fg">
         <div><div class="fl">출발 시간 <span class="fr">*</span></div><input type="time" class="fi" id="fStartTime"></div>
         <div><div class="fl">도착 시간 <span class="fr">*</span></div><input type="time" class="fi" id="fEndTime"></div>
@@ -1014,7 +1014,7 @@ async function addRecord() {
   if (!team) return toast('부서를 선택해주세요','error');
   if (!rider) return toast('탑승자를 입력해주세요','error');
   if (!destination) return toast('목적지를 입력해주세요','error');
-  if (!purpose) return toast('활용 목적을 입력해주세요','error');
+  if (!purpose) return toast('운행 목적을 입력해주세요','error');
   if (!startTime) return toast('출발 시간을 입력해주세요','error');
   if (!endTime) return toast('도착 시간을 입력해주세요','error');
   if (!finalKm) return toast('최종 키로수를 입력해주세요','error');
@@ -1026,7 +1026,8 @@ async function addRecord() {
   const dist = Number(finalKm)-Number(prev);
   if (dist<0) return toast('최종 키로수가 이전보다 작습니다','error');
 
-  const rec = { no:d.records.length+1, date, team, rider, destination, purpose, startTime, endTime, prevKm:Number(prev), finalKm:Number(finalKm), dist, note, synced:true, timestamp:Date.now() };
+  // 날짜 순서로 no 번호 부여
+  const rec = { no:d.records.length+1, date, team, rider, destination, purpose, startTime, endTime, prevKm:Number(prev), finalKm:Number(finalKm), dist, note, synced:true, timestamp:Date.now(), insertByDate:true };
 
   // 즉시 화면에 반영
   d.records.push(rec);
@@ -1118,7 +1119,7 @@ async function syncAllVehicles() {
 function doCSV(vehicleName) {
   const d = ld(vehicleName);
   if (!d.records.length) return false;
-  const rows=[['번호','날짜','부서','탑승자','목적지','활용목적','출발시간','도착시간','이전km','최종km','운행거리(km)','특이사항']];
+  const rows=[['번호','날짜','부서','탑승자','목적지','운행목적','출발시간','도착시간','이전km','최종km','운행거리(km)','특이사항']];
   d.records.forEach(r=>rows.push([r.no,r.date,r.team,r.rider,r.destination||'',r.purpose||'',r.startTime||'',r.endTime||'',r.prevKm,r.finalKm,r.dist,r.note||'']));
   const csv='\uFEFF'+rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
   const a=document.createElement('a');
@@ -1232,7 +1233,7 @@ function exportMonthPDF() {
     hasData = true;
     const total = records.reduce((s,r) => s + Number(r.dist||0), 0);
     html += `<table><thead><tr>
-      <th>No</th><th>날짜</th><th>부서</th><th>탑승자</th><th>목적지</th><th>활용목적</th>
+      <th>No</th><th>날짜</th><th>부서</th><th>탑승자</th><th>목적지</th><th>운행목적</th>
       <th>출발</th><th>도착</th><th>이전(km)</th><th>최종(km)</th><th>운행거리</th><th>특이사항</th>
     </tr></thead><tbody>`;
     records.forEach(r => {
