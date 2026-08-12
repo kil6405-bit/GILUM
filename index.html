@@ -621,10 +621,190 @@ body { font-family: 'Noto Sans KR', sans-serif; background: var(--bg); color: va
       <div class="fg"><div class="fl">탑승자 <span class="fr">*</span></div><input type="text" class="fi" id="fRider" placeholder="예: 오동주" autocomplete="off"></div>
       <div class="fg"><div class="fl">목적지 <span class="fr">*</span></div><input type="text" class="fi" id="fDestination" placeholder="예: 돈암동 복지관, 성북구청" autocomplete="off"></div>
       <div class="fg"><div class="fl">운행 목적 <span class="fr">*</span></div><input type="text" class="fi" id="fPurpose" placeholder="예: 가정방문, 물품배송, 업무출장" autocomplete="off"></div>
-      <div class="two-col fg">
-        <div><div class="fl">출발 시간 <span class="fr">*</span></div><input type="time" class="fi" id="fStartTime"></div>
-        <div><div class="fl">도착 시간 <span class="fr">*</span></div><input type="time" class="fi" id="fEndTime"></div>
+      <div class="fg">
+        <div class="fl">출발 시간 <span class="fr">*</span></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <select class="fs" id="fStartHour" onchange="syncTimeFromParts('Start')"><option value="">시</option>
+<option>00</option>
+<option>01</option>
+<option>02</option>
+<option>03</option>
+<option>04</option>
+<option>05</option>
+<option>06</option>
+<option>07</option>
+<option>08</option>
+<option>09</option>
+<option>10</option>
+<option>11</option>
+<option>12</option>
+<option>13</option>
+<option>14</option>
+<option>15</option>
+<option>16</option>
+<option>17</option>
+<option>18</option>
+<option>19</option>
+<option>20</option>
+<option>21</option>
+<option>22</option>
+<option>23</option></select>
+          <select class="fs" id="fStartMin" onchange="syncTimeFromParts('Start')"><option value="">분</option>
+<option>00</option>
+<option>01</option>
+<option>02</option>
+<option>03</option>
+<option>04</option>
+<option>05</option>
+<option>06</option>
+<option>07</option>
+<option>08</option>
+<option>09</option>
+<option>10</option>
+<option>11</option>
+<option>12</option>
+<option>13</option>
+<option>14</option>
+<option>15</option>
+<option>16</option>
+<option>17</option>
+<option>18</option>
+<option>19</option>
+<option>20</option>
+<option>21</option>
+<option>22</option>
+<option>23</option>
+<option>24</option>
+<option>25</option>
+<option>26</option>
+<option>27</option>
+<option>28</option>
+<option>29</option>
+<option>30</option>
+<option>31</option>
+<option>32</option>
+<option>33</option>
+<option>34</option>
+<option>35</option>
+<option>36</option>
+<option>37</option>
+<option>38</option>
+<option>39</option>
+<option>40</option>
+<option>41</option>
+<option>42</option>
+<option>43</option>
+<option>44</option>
+<option>45</option>
+<option>46</option>
+<option>47</option>
+<option>48</option>
+<option>49</option>
+<option>50</option>
+<option>51</option>
+<option>52</option>
+<option>53</option>
+<option>54</option>
+<option>55</option>
+<option>56</option>
+<option>57</option>
+<option>58</option>
+<option>59</option></select>
+        </div>
       </div>
+      <div class="fg">
+        <div class="fl">도착 시간 <span class="fr">*</span></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <select class="fs" id="fEndHour" onchange="syncTimeFromParts('End')"><option value="">시</option>
+<option>00</option>
+<option>01</option>
+<option>02</option>
+<option>03</option>
+<option>04</option>
+<option>05</option>
+<option>06</option>
+<option>07</option>
+<option>08</option>
+<option>09</option>
+<option>10</option>
+<option>11</option>
+<option>12</option>
+<option>13</option>
+<option>14</option>
+<option>15</option>
+<option>16</option>
+<option>17</option>
+<option>18</option>
+<option>19</option>
+<option>20</option>
+<option>21</option>
+<option>22</option>
+<option>23</option></select>
+          <select class="fs" id="fEndMin" onchange="syncTimeFromParts('End')"><option value="">분</option>
+<option>00</option>
+<option>01</option>
+<option>02</option>
+<option>03</option>
+<option>04</option>
+<option>05</option>
+<option>06</option>
+<option>07</option>
+<option>08</option>
+<option>09</option>
+<option>10</option>
+<option>11</option>
+<option>12</option>
+<option>13</option>
+<option>14</option>
+<option>15</option>
+<option>16</option>
+<option>17</option>
+<option>18</option>
+<option>19</option>
+<option>20</option>
+<option>21</option>
+<option>22</option>
+<option>23</option>
+<option>24</option>
+<option>25</option>
+<option>26</option>
+<option>27</option>
+<option>28</option>
+<option>29</option>
+<option>30</option>
+<option>31</option>
+<option>32</option>
+<option>33</option>
+<option>34</option>
+<option>35</option>
+<option>36</option>
+<option>37</option>
+<option>38</option>
+<option>39</option>
+<option>40</option>
+<option>41</option>
+<option>42</option>
+<option>43</option>
+<option>44</option>
+<option>45</option>
+<option>46</option>
+<option>47</option>
+<option>48</option>
+<option>49</option>
+<option>50</option>
+<option>51</option>
+<option>52</option>
+<option>53</option>
+<option>54</option>
+<option>55</option>
+<option>56</option>
+<option>57</option>
+<option>58</option>
+<option>59</option></select>
+        </div>
+      </div>
+      <input type="hidden" id="fStartTime">
+      <input type="hidden" id="fEndTime">
       <div class="two-col fg">
         <div><div class="fl">이전 키로수 <span style="font-size:10px;color:var(--muted)">(수정가능)</span></div><input type="number" class="fi" id="fPrevKm" placeholder="자동입력" inputmode="numeric" oninput="onKmInput()"></div>
         <div><div class="fl">최종 키로수 <span class="fr">*</span></div><input type="number" class="fi" id="fFinalKm" placeholder="직접 입력" inputmode="numeric" oninput="onKmInput()"></div>
@@ -887,6 +1067,7 @@ function init() {
   document.getElementById('setupCode').textContent = SCRIPT_CODE;
   document.getElementById('settingsCode').textContent = SCRIPT_CODE;
   document.getElementById('fDate').value = today();
+  buildFormTimeOptions();
   // 월별 출력 기본값 = 현재 월
   document.getElementById('exportMonth').value = today().slice(0,7);
   updateSheetsUI();
@@ -941,6 +1122,7 @@ function renderHome() {
         <div style="display:flex;align-items:center;gap:6px">
           <span class="rc-team team-${r.team}">${r.team}</span>
           <span class="sync-badge">✓ 저장됨</span>
+          <button class="del-btn" onclick="openEditSheet(${origIdx})">✏️</button>
           <button class="del-btn" onclick="delRecord(${origIdx})">🗑</button>
         </div>
       </div>
@@ -982,6 +1164,7 @@ function onKmInput() {
 }
 
 function openAddSheet() {
+  buildFormTimeOptions();
   document.getElementById('fDate').value = today();
   updatePrevKm();
   document.getElementById('fFinalKm').value = '';
@@ -990,6 +1173,10 @@ function openAddSheet() {
   document.getElementById('fPurpose').value = '';
   document.getElementById('fStartTime').value = '';
   document.getElementById('fEndTime').value = '';
+  document.getElementById('fStartHour').value = '';
+  document.getElementById('fStartMin').value = '';
+  document.getElementById('fEndHour').value = '';
+  document.getElementById('fEndMin').value = '';
   document.getElementById('addSheet').classList.add('open');
   document.getElementById('fab').style.display = 'none';
   setTimeout(()=>document.getElementById('fFinalKm').focus(), 380);
@@ -1495,6 +1682,33 @@ function closeDirectResvSheet() {
   document.getElementById('fab').style.display = 'flex';
 }
 
+function buildFormTimeOptions() {
+  ['fStartHour','fEndHour'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    let html = '<option value="">시</option>';
+    for (let i=0;i<24;i++) html += `<option>${String(i).padStart(2,'0')}</option>`;
+    el.innerHTML = html;
+  });
+  ['fStartMin','fEndMin'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    let html = '<option value="">분</option>';
+    for (let i=0;i<60;i++) html += `<option>${String(i).padStart(2,'0')}</option>`;
+    el.innerHTML = html;
+  });
+}
+
+function syncTimeFromParts(prefix) {
+  const hEl = document.getElementById('f'+prefix+'Hour');
+  const mEl = document.getElementById('f'+prefix+'Min');
+  const tEl = document.getElementById('f'+prefix+'Time');
+  if (!hEl || !mEl || !tEl) return;
+  const h = hEl.value, m = mEl.value;
+  tEl.value = (h && m) ? h+':'+m : '';
+  onKmInput();
+}
+
 function checkSlotConflict() {
   const vehicle = document.getElementById('drVehicle').value;
   const date = document.getElementById('drDate').value;
@@ -1578,6 +1792,119 @@ async function submitDirectReservation() {
   closeDirectResvSheet();
   buildWeek(); renderResvSlots();
   toast(`✅ ${vehicle} ${date} ${start}~${end} (${slots.length}시간) 예약 완료!`, 'success');
+}
+
+// ── 수정 시트 ──
+function buildTimeOptions(selId, selected) {
+  const el = document.getElementById(selId);
+  const isHour = selId.includes('Hour');
+  const max = isHour ? 24 : 60;
+  const label = isHour ? '시' : '분';
+  let html = `<option value="">${label}</option>`;
+  for (let i = 0; i < max; i++) {
+    const v = String(i).padStart(2,'0');
+    html += `<option${v===selected?' selected':''}>${v}</option>`;
+  }
+  el.innerHTML = html;
+}
+
+function syncEditTime(prefix) {
+  const h = document.getElementById('e'+prefix+'Hour').value;
+  const m = document.getElementById('e'+prefix+'Min').value;
+  document.getElementById('e'+prefix+'Time').value = (h&&m) ? h+':'+m : '';
+}
+
+function openEditSheet(idx) {
+  const d = ld(cv);
+  const r = d.records[idx];
+  if (!r) return;
+
+  document.getElementById('editIdx').value = idx;
+  document.getElementById('eDate').value = r.date || '';
+  document.getElementById('eTeam').value = r.team || '';
+  document.getElementById('eRider').value = r.rider || '';
+  document.getElementById('eDestination').value = r.destination || '';
+  document.getElementById('ePurpose').value = r.purpose || '';
+  document.getElementById('ePrevKm').value = r.prevKm || '';
+  document.getElementById('eFinalKm').value = r.finalKm || '';
+  document.getElementById('eNote').value = r.note || '';
+
+  // 시간 드롭다운 초기화
+  const [sh='', sm=''] = (r.startTime||'').split(':');
+  const [eh='', em=''] = (r.endTime||'').split(':');
+  buildTimeOptions('eStartHour', sh);
+  buildTimeOptions('eStartMin', sm);
+  buildTimeOptions('eEndHour', eh);
+  buildTimeOptions('eEndMin', em);
+  document.getElementById('eStartTime').value = r.startTime || '';
+  document.getElementById('eEndTime').value = r.endTime || '';
+
+  document.getElementById('editSheet').classList.add('open');
+  document.getElementById('fab').style.display = 'none';
+}
+
+function closeEditSheet() {
+  document.getElementById('editSheet').classList.remove('open');
+  document.getElementById('fab').style.display = 'flex';
+}
+
+async function saveEdit() {
+  const idx = Number(document.getElementById('editIdx').value);
+  const date = document.getElementById('eDate').value;
+  const team = document.getElementById('eTeam').value;
+  const rider = document.getElementById('eRider').value.trim();
+  const destination = document.getElementById('eDestination').value.trim();
+  const purpose = document.getElementById('ePurpose').value.trim();
+  const startTime = document.getElementById('eStartTime').value;
+  const endTime = document.getElementById('eEndTime').value;
+  const prevKm = document.getElementById('ePrevKm').value;
+  const finalKm = document.getElementById('eFinalKm').value;
+  const note = document.getElementById('eNote').value.trim();
+
+  if (!date) return toast('날짜를 입력해주세요','error');
+  if (!team) return toast('부서를 선택해주세요','error');
+  if (!rider) return toast('탑승자를 입력해주세요','error');
+  if (!finalKm) return toast('최종 키로수를 입력해주세요','error');
+
+  const dist = Number(finalKm) - Number(prevKm);
+
+  const d = ld(cv);
+  const oldRec = d.records[idx];
+  d.records[idx] = {
+    ...oldRec,
+    date, team, rider, destination, purpose,
+    startTime, endTime,
+    prevKm: Number(prevKm),
+    finalKm: Number(finalKm),
+    dist,
+    note,
+    synced: false
+  };
+  sd(cv, d);
+  closeEditSheet();
+  renderHome();
+  toast('✅ 수정 완료!', 'success');
+
+  // Sheets에 반영 (삭제 후 재등록)
+  try {
+    await fetch(SHEETS_URL, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({vehicle:cv, action:'delete', no:oldRec.no})
+    });
+    await new Promise(res=>setTimeout(res,300));
+    await fetch(SHEETS_URL, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({vehicle:cv, ...d.records[idx], synced:true})
+    });
+    d.records[idx].synced = true;
+    sd(cv, d);
+    renderHome();
+    toast('☁️ Sheets 수정 반영 완료!', 'success');
+  } catch(err) {
+    toast('로컬 수정됨 (Sheets 연결 확인 필요)', 'info');
+  }
 }
 
 // ── TOAST ──
